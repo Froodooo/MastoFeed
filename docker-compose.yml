@@ -1,7 +1,6 @@
 services:
   mastofeed:
-    build: https://github.com/Froodooo/MastoFeed.git#main
-    image: mastofeed:latest
+    image: ghcr.io/froodooo/mastofeed:latest
     container_name: mastofeed
     restart: unless-stopped
     env_file: .env
