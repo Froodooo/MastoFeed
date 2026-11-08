@@ -1,0 +1,14 @@
+services:
+  mastofeed:
+    build: .
+    image: mastofeed:latest
+    container_name: mastofeed
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      TZ: "Europe/Amsterdam"
+    volumes:
+      - mastofeed-data:/data
+
+volumes:
+  mastofeed-data:
