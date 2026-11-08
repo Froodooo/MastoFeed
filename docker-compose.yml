@@ -1,6 +1,6 @@
 services:
   mastofeed:
-    build: .
+    build: https://github.com/Froodooo/MastoFeed.git#main
     image: mastofeed:latest
     container_name: mastofeed
     restart: unless-stopped
