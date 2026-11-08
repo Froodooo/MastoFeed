@@ -7,6 +7,7 @@ import urllib.request
 from html.parser import HTMLParser
 from urllib.parse import urljoin
 
+import web
 from config import USER_AGENT
 
 NAME = "bluesky"
@@ -19,7 +20,6 @@ SERVICE = os.environ.get("BLUESKY_SERVICE", "https://bsky.social").rstrip("/")
 
 MAX_CHARS = 300
 MAX_THUMB_BYTES = 1_000_000  # Bluesky's blob limit for thumbnails
-MAX_PAGE_BYTES = 1_000_000  # how much of an entry's page to scan for og: tags
 
 
 def enabled():
@@ -81,12 +81,8 @@ class _OGParser(HTMLParser):
 def fetch_og(link):
     """Return the page's Open Graph tags (empty dict on any failure)."""
     try:
-        req = urllib.request.Request(link, headers={"User-Agent": USER_AGENT})
-        with urllib.request.urlopen(req, timeout=30) as resp:
-            charset = resp.headers.get_content_charset() or "utf-8"
-            page = resp.read(MAX_PAGE_BYTES).decode(charset, errors="replace")
         parser = _OGParser()
-        parser.feed(page)
+        parser.feed(web.fetch_page(link))
         return parser.og
     except Exception:
         log.warning("Could not read Open Graph tags from %s", link, exc_info=True)

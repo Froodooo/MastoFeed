@@ -2,7 +2,7 @@ FROM python:3.12-slim
 
 ENV PYTHONUNBUFFERED=1
 WORKDIR /app
-COPY main.py config.py ./
+COPY *.py ./
 COPY targets/ targets/
 
 RUN mkdir /data
