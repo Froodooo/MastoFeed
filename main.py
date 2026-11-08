@@ -19,7 +19,7 @@ MASTODON_TOKEN = os.environ["MASTODON_TOKEN"]
 POLL_INTERVAL = int(os.environ.get("POLL_INTERVAL", "900"))
 VISIBILITY = os.environ.get("VISIBILITY", "public")
 DB_PATH = os.environ.get("DB_PATH", "/data/posted.db")
-USER_AGENT = "mastofeed/1.0 (+https://yordi.me)"
+USER_AGENT = os.environ.get("USER_AGENT", "mastofeed/1.0")
 
 ATOM = "{http://www.w3.org/2005/Atom}"
 
