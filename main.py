@@ -17,6 +17,8 @@ FEED_URL = os.environ["FEED_URL"]
 # Optional (defaults)
 POLL_INTERVAL = int(os.environ.get("POLL_INTERVAL", "900"))
 DB_PATH = os.environ.get("DB_PATH", "/data/posted.db")
+# Poll once and exit instead of looping; handy for testing.
+RUN_ONCE = os.environ.get("RUN_ONCE", "") == "1"
 
 ATOM = "{http://www.w3.org/2005/Atom}"
 
@@ -174,6 +176,10 @@ def main():
             poll(db, targets)
         except Exception:
             log.exception("Poll failed; will retry next cycle")
+            if RUN_ONCE:
+                raise SystemExit(1)
+        if RUN_ONCE:
+            return
         time.sleep(POLL_INTERVAL)
 
 

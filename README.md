@@ -36,6 +36,7 @@ All settings are environment variables, normally set in `.env`.
 | `MASTODON_URL` | yes | | Your instance, for example `https://mastodon.social`. |
 | `MASTODON_TOKEN` | yes | | Access token with the `write:statuses` scope. |
 | `POLL_INTERVAL` | no | `900` | Seconds between checks. |
+| `RUN_ONCE` | no | unset | Set to `1` to poll once and exit (exit code 1 if the poll failed). Useful for testing, so no copy keeps running. |
 | `VISIBILITY` | no | `public` | Mastodon visibility: `public`, `unlisted`, `private` or `direct`. |
 | `BLUESKY_HANDLE` | no | | Your handle, for example `you.bsky.social`. |
 | `BLUESKY_APP_PASSWORD` | no | | A Bluesky app password (not your main password). |
