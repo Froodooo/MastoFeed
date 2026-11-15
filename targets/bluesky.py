@@ -5,7 +5,7 @@ import logging
 import os
 import urllib.request
 from html.parser import HTMLParser
-from urllib.parse import urljoin
+from urllib.parse import urlencode, urljoin
 
 from config import USER_AGENT
 
@@ -20,6 +20,7 @@ SERVICE = os.environ.get("BLUESKY_SERVICE", "https://bsky.social").rstrip("/")
 MAX_CHARS = 300
 MAX_THUMB_BYTES = 1_000_000  # Bluesky's blob limit for thumbnails
 MAX_PAGE_BYTES = 1_000_000  # how much of an entry's page to scan for og: tags
+RECENT_POSTS = 20  # how many recent posts to check for an existing copy
 
 
 def enabled():
@@ -38,6 +39,34 @@ def _request(path, payload, token=None):
     )
     with urllib.request.urlopen(req, timeout=30) as resp:
         return json.load(resp)
+
+
+def _web_url(did, uri):
+    """Turn at://did/app.bsky.feed.post/rkey into a web URL."""
+    return f"https://bsky.app/profile/{did}/post/{uri.rsplit('/', 1)[-1]}"
+
+
+def find_existing(did, link, token):
+    """Return the web URL of a recent post that already links to `link`, or None.
+
+    Makes retries safe: Bluesky has no idempotency key, so a post that was
+    created but not recorded locally would otherwise be duplicated.
+    """
+    query = urlencode(
+        {"repo": did, "collection": "app.bsky.feed.post", "limit": RECENT_POSTS}
+    )
+    req = urllib.request.Request(
+        f"{SERVICE}/xrpc/com.atproto.repo.listRecords?{query}",
+        headers={"Authorization": f"Bearer {token}", "User-Agent": USER_AGENT},
+    )
+    with urllib.request.urlopen(req, timeout=30) as resp:
+        records = json.load(resp).get("records", [])
+    for rec in records:
+        value = rec.get("value", {})
+        embed_uri = value.get("embed", {}).get("external", {}).get("uri")
+        if embed_uri == link or link in value.get("text", ""):
+            return _web_url(did, rec["uri"])
+    return None
 
 
 def build_post(title, link):
@@ -129,6 +158,11 @@ def post(guid, title, link):
         "com.atproto.server.createSession",
         {"identifier": HANDLE, "password": APP_PASSWORD},
     )
+    # If the lookup fails, the exception propagates and the post is retried
+    # next cycle; that is safer than risking a duplicate.
+    if existing := find_existing(session["did"], link, session["accessJwt"]):
+        log.info("bluesky: %s is already posted, skipping", link)
+        return existing
     text, facets = build_post(title, link)
     og = fetch_og(link)
     external = {
@@ -159,6 +193,4 @@ def post(guid, title, link):
         },
         token=session["accessJwt"],
     )
-    # Turn at://did/app.bsky.feed.post/rkey into a web URL.
-    rkey = result["uri"].rsplit("/", 1)[-1]
-    return f"https://bsky.app/profile/{session['did']}/post/{rkey}"
+    return _web_url(session["did"], result["uri"])
